@@ -20,14 +20,11 @@ def load_orange_book_data():
 # High-revenue drugs to focus on (you'll research these)
 target_drugs = {
 'KEYTRUDA': {'company': 'Merck & Co.', 'ticker': 'MRK', 'revenue_billions': 31.0},
-'OZEMPIC': {'company': 'Novo Nordisk', 'ticker': 'NOVO B', 'revenue_billions': 21.0},
 'MOUNJARO': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 19.0},
-'DUPIXENT': {'company': 'Sanofi/Regeneron', 'ticker': 'SNY/REGN', 'revenue_billions': 17.0},
 'SKYRIZI': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 13.0},
-'ELIQUIS': {'company': 'Bristol Myers Squibb/Pfizer', 'ticker': 'BMY/PFE', 'revenue_billions': 13.0},
+'ELIQUIS': {'company': 'Bristol Myers Squibb/Pfizer', 'ticker': 'BMY', 'revenue_billions': 13.0},
 'DARZALEX': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 13.0},
 'BIKTARVY': {'company': 'Gilead Sciences', 'ticker': 'GILD', 'revenue_billions': 13.0},
-'WEGOVY': {'company': 'Novo Nordisk', 'ticker': 'NOVO B', 'revenue_billions': 13.0},
 'ZEPBOUND': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 11.0}
 }
 def analyze_patent_cliffs(products, patents, target_drugs):
@@ -169,32 +166,89 @@ def plot_stock_vs_patent_risk(stock_data, revenue_risk):
 
 plot_stock_vs_patent_risk(stock_data, revenue_risk)
 
-def calculate_patent_adjusted_weights(revenue_risk):
-    """Calculate portfolio weights adjusted for patent cliff risk"""
+def calculate_company_patent_risk(cliff_analysis):
+    """Aggregate patent cliff risk at company level"""
+    
+    company_risk = []
+    
+    # Group by ticker to handle multiple drugs per company
+    for ticker in cliff_analysis['ticker'].unique():
+        company_drugs = cliff_analysis[cliff_analysis['ticker'] == ticker]
+        
+        # Calculate total revenue at risk for this company
+        total_drug_revenue = company_drugs['revenue_billions'].sum()
+        
+        # Find the earliest patent cliff (most urgent risk)
+        earliest_cliff = company_drugs['latest_patent_expiry'].min()
+        years_to_earliest_cliff = (earliest_cliff - pd.Timestamp.now()).days / 365
+        
+        # Count number of drugs at risk
+        drugs_at_risk = len(company_drugs)
+        
+        # Get company name (take first one)
+        company_name = company_drugs['company'].iloc[0]
+        
+        company_risk.append({
+            'ticker': ticker,
+            'company': company_name,
+            'total_drug_revenue_at_risk': total_drug_revenue,
+            'years_to_earliest_cliff': years_to_earliest_cliff,
+            'number_of_drugs_at_risk': drugs_at_risk,
+            'drug_list': ', '.join(company_drugs['drug'].tolist())
+        })
+    
+    return pd.DataFrame(company_risk)
+
+def calculate_company_portfolio_weights(company_risk, company_total_revenues):
+    """Calculate portfolio weights at company level"""
     
     weights = []
-    for _, row in revenue_risk.iterrows():
-        # Reduce weight as patent cliff approaches and risk increases
-        time_factor = max(0.1, row['years_to_cliff'] / 5)  # Normalize to 5 years
-        #Don't want to weight it to 0 so have the 0.1
-        risk_factor = max(0.1, 1 - (row['revenue_at_risk_percent'] / 100))
+    
+    for _, row in company_risk.iterrows():
+        ticker = row['ticker']
+        total_revenue = company_total_revenues.get(ticker, 50.0)  # Default if not found
         
-        adjusted_weight = time_factor * risk_factor
+        # Calculate what % of company revenue is at patent cliff risk
+        revenue_risk_percent = (row['total_drug_revenue_at_risk'] / total_revenue) * 100
+        
+        # Time factor: reduce weight as earliest cliff approaches
+        time_factor = max(0.1, row['years_to_earliest_cliff'] / 5)
+        
+        # Risk factor: reduce weight based on total revenue at risk
+        risk_factor = max(0.1, 1 - (revenue_risk_percent / 100))
+        
+        # Diversification penalty: slight penalty for having multiple drugs at risk
+        diversification_factor = max(0.8, 1 - (row['number_of_drugs_at_risk'] - 1) * 0.1)
+        
+        # Combined adjustment
+        risk_adjusted_weight = time_factor * risk_factor * diversification_factor
+        
         weights.append({
-            'ticker': row['ticker'],
-            'base_weight': 0.5,  # Equal weight starting point
-            'risk_adjusted_weight': adjusted_weight,
-            'recommendation': 'Underweight' if adjusted_weight < 0.5 else 'Overweight'
+            'ticker': ticker,
+            'company': row['company'],
+            'total_revenue_at_risk_billions': row['total_drug_revenue_at_risk'],
+            'revenue_risk_percent': revenue_risk_percent,
+            'years_to_earliest_cliff': row['years_to_earliest_cliff'],
+            'drugs_at_risk': row['number_of_drugs_at_risk'],
+            'drug_list': row['drug_list'],
+            'risk_adjusted_weight': risk_adjusted_weight
         })
     
     weights_df = pd.DataFrame(weights)
     
     # Normalize weights to sum to 1
     total_weight = weights_df['risk_adjusted_weight'].sum()
-    weights_df['normalized_weight'] = weights_df['risk_adjusted_weight'] / total_weight
+    weights_df['normalized_portfolio_weight'] = weights_df['risk_adjusted_weight'] / total_weight
     
     return weights_df
 
-portfolio_weights = calculate_patent_adjusted_weights(revenue_risk)
-print("\nPatent-adjusted portfolio weights:")
-print(portfolio_weights)
+# Calculate company-level risk first
+company_level_risk = calculate_company_patent_risk(cliff_analysis)
+print("\nCompany-level patent cliff risk:")
+print(company_level_risk)
+
+# Then calculate portfolio weights
+portfolio_weights = calculate_company_portfolio_weights(company_level_risk, company_total_revenues)
+print("\nCompany-level portfolio weights:")
+print(portfolio_weights[['ticker', 'total_revenue_at_risk_billions', 'revenue_risk_percent', 
+                        'years_to_earliest_cliff', 'drugs_at_risk', 'normalized_portfolio_weight']])
