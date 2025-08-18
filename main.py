@@ -1,6 +1,7 @@
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
 
 def load_orange_book_data():
     """Load the three Orange Book data files"""
@@ -106,3 +107,40 @@ def calculate_revenue_risk(cliff_analysis):
 revenue_risk = calculate_revenue_risk(cliff_analysis)
 print("\nRevenue at risk analysis:")
 print(revenue_risk)
+
+# Plot stock performance vs patent cliff timing
+def plot_stock_vs_patent_risk(stock_data, revenue_risk):
+    """Plot stock performance colored by patent cliff risk"""
+    
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+    
+    # Plot 1: Stock prices over time
+    for ticker in revenue_risk['ticker'].unique():
+        if ('Close', ticker) in stock_data.columns:
+            ax1.plot(stock_data.index, stock_data[('Close', ticker)], 
+                    label=f"{ticker}", linewidth=2)
+    
+    ax1.set_title('Stock Prices Over Time')
+    ax1.set_ylabel('Stock Price ($)')
+    ax1.legend()
+    ax1.grid(True)
+    
+    # Plot 2: Risk vs Time to Patent Cliff
+    scatter = ax2.scatter(revenue_risk['years_to_cliff'], 
+                         revenue_risk['revenue_at_risk_percent'],
+                         s=revenue_risk['drug_revenue']*50,  # Size by revenue
+                         alpha=0.7)
+    
+    for _, row in revenue_risk.iterrows():
+        ax2.annotate(f"{row['ticker']}\n{row['drug']}", 
+                    (row['years_to_cliff'], row['revenue_at_risk_percent']))
+    
+    ax2.set_xlabel('Years to Patent Cliff')
+    ax2.set_ylabel('Revenue at Risk (%)')
+    ax2.set_title('Patent Cliff Risk Analysis')
+    ax2.grid(True)
+    
+    plt.tight_layout()
+    plt.show()
+
+plot_stock_vs_patent_risk(stock_data, revenue_risk)
