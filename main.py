@@ -74,16 +74,32 @@ print(cliff_analysis)
 tickers = list(set([drug_info['ticker'] for drug_info in target_drugs.values()]))
 stock_data = yf.download(tickers, start='2020-01-01', end='2024-12-31')
 print("\nStock data downloaded successfully!")
+# --- NEW PART: Get latest total revenues from yfinance ---
+def get_latest_revenues(tickers):
+    revenues = {}
+    for ticker in tickers:
+        t = yf.Ticker(ticker)
+        try:
+            # Pull annual financials
+            financials = t.financials
+            
+            # Get "Total Revenue" if available
+            if "Total Revenue" in financials.index:
+                latest_revenue = financials.loc["Total Revenue"].iloc[0]
+                revenues[ticker] = latest_revenue / 1e9  # convert to billions
+            else:
+                revenues[ticker] = None
+        except Exception as e:
+            print(f"Could not fetch revenue for {ticker}: {e}")
+            revenues[ticker] = None
+    return revenues
+
+company_total_revenues = get_latest_revenues(tickers)
+print("\nFetched total revenues (billions):", company_total_revenues)
 
 # Calculate what % of each company's revenue is at patent cliff risk
-def calculate_revenue_risk(cliff_analysis):
+def calculate_revenue_risk(cliff_analysis, company_total_revenues):
     """Calculate revenue at risk by company"""
-    
-    # You'll need total company revenues - let's use rough estimates for now
-    company_total_revenues = {
-        'PFE': 100.0,  # Pfizer total revenue ~$100B
-        'BMY': 46.0    # Bristol Myers ~$46B
-    }
     
     risk_analysis = []
     for _, row in cliff_analysis.iterrows():
@@ -104,7 +120,7 @@ def calculate_revenue_risk(cliff_analysis):
     
     return pd.DataFrame(risk_analysis)
 
-revenue_risk = calculate_revenue_risk(cliff_analysis)
+revenue_risk = calculate_revenue_risk(cliff_analysis, company_total_revenues)
 print("\nRevenue at risk analysis:")
 print(revenue_risk)
 
@@ -152,6 +168,7 @@ def calculate_patent_adjusted_weights(revenue_risk):
     for _, row in revenue_risk.iterrows():
         # Reduce weight as patent cliff approaches and risk increases
         time_factor = max(0.1, row['years_to_cliff'] / 5)  # Normalize to 5 years
+        #Don't want to weight it to 0 so have the 0.1
         risk_factor = max(0.1, 1 - (row['revenue_at_risk_percent'] / 100))
         
         adjusted_weight = time_factor * risk_factor
