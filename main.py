@@ -19,10 +19,7 @@ def load_orange_book_data():
 # High-revenue drugs to focus on (you'll research these)
 target_drugs = {
     'ELIQUIS': {'company': 'Pfizer/BMS', 'ticker': 'PFE', 'revenue_billions': 6.0},
-    'REVLIMID': {'company': 'Bristol Myers', 'ticker': 'BMY', 'revenue_billions': 12.8},
-    'KEYTRUDA': {'company': 'Merck', 'ticker': 'MRK', 'revenue_billions': 20.9},
-    'HUMIRA': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 21.2},
-    'OPDIVO': {'company': 'Bristol Myers', 'ticker': 'BMY', 'revenue_billions': 8.1}
+    'REVLIMID': {'company': 'Bristol Myers', 'ticker': 'BMY', 'revenue_billions': 12.8}
 }
 def analyze_patent_cliffs(products, patents, target_drugs):
     """Find patent expiry dates for target drugs"""
@@ -57,13 +54,55 @@ def analyze_patent_cliffs(products, patents, target_drugs):
 
 # Run the analysis
 products, patents, exclusivity = load_orange_book_data()
-patent_cliff_analysis = analyze_patent_cliffs(products, patents, target_drugs)
-print(patent_cliff_analysis)
+cliff_analysis = analyze_patent_cliffs(products, patents, target_drugs)
+print(cliff_analysis)
 
 # Calculate revenue at risk
-patent_cliff_analysis['months_to_expiry'] = (
-    patent_cliff_analysis['latest_patent_expiry'] - datetime.now()
+cliff_analysis['months_to_expiry'] = (
+    cliff_analysis['latest_patent_expiry'] - datetime.now()
 ).dt.days / 30
+cliff_analysis['days_to_expiry'] = (cliff_analysis['latest_patent_expiry'] - pd.Timestamp.now()).dt.days
+cliff_analysis['years_to_expiry'] = cliff_analysis['days_to_expiry'] / 365
 
+#Print output
 print("\nPatent Cliff Timeline:")
-print(patent_cliff_analysis[['drug', 'ticker', 'revenue_billions', 'months_to_expiry']].sort_values('months_to_expiry'))
+print(cliff_analysis)
+
+#Download stock data for target drugs
+# Get unique tickers (in case of duplicates)
+tickers = list(set([drug_info['ticker'] for drug_info in target_drugs.values()]))
+stock_data = yf.download(tickers, start='2020-01-01', end='2024-12-31')
+print("\nStock data downloaded successfully!")
+
+# Calculate what % of each company's revenue is at patent cliff risk
+def calculate_revenue_risk(cliff_analysis):
+    """Calculate revenue at risk by company"""
+    
+    # You'll need total company revenues - let's use rough estimates for now
+    company_total_revenues = {
+        'PFE': 100.0,  # Pfizer total revenue ~$100B
+        'BMY': 46.0    # Bristol Myers ~$46B
+    }
+    
+    risk_analysis = []
+    for _, row in cliff_analysis.iterrows():
+        ticker = row['ticker']
+        drug_revenue = row['revenue_billions']
+        total_revenue = company_total_revenues.get(ticker, 0)
+        
+        risk_percentage = (drug_revenue / total_revenue * 100) if total_revenue > 0 else 0
+        
+        risk_analysis.append({
+            'ticker': ticker,
+            'drug': row['drug'],
+            'drug_revenue': drug_revenue,
+            'total_company_revenue': total_revenue,
+            'revenue_at_risk_percent': risk_percentage,
+            'years_to_cliff': row['years_to_expiry']
+        })
+    
+    return pd.DataFrame(risk_analysis)
+
+revenue_risk = calculate_revenue_risk(cliff_analysis)
+print("\nRevenue at risk analysis:")
+print(revenue_risk)
