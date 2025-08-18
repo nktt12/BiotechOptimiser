@@ -144,3 +144,32 @@ def plot_stock_vs_patent_risk(stock_data, revenue_risk):
     plt.show()
 
 plot_stock_vs_patent_risk(stock_data, revenue_risk)
+
+def calculate_patent_adjusted_weights(revenue_risk):
+    """Calculate portfolio weights adjusted for patent cliff risk"""
+    
+    weights = []
+    for _, row in revenue_risk.iterrows():
+        # Reduce weight as patent cliff approaches and risk increases
+        time_factor = max(0.1, row['years_to_cliff'] / 5)  # Normalize to 5 years
+        risk_factor = max(0.1, 1 - (row['revenue_at_risk_percent'] / 100))
+        
+        adjusted_weight = time_factor * risk_factor
+        weights.append({
+            'ticker': row['ticker'],
+            'base_weight': 0.5,  # Equal weight starting point
+            'risk_adjusted_weight': adjusted_weight,
+            'recommendation': 'Underweight' if adjusted_weight < 0.5 else 'Overweight'
+        })
+    
+    weights_df = pd.DataFrame(weights)
+    
+    # Normalize weights to sum to 1
+    total_weight = weights_df['risk_adjusted_weight'].sum()
+    weights_df['normalized_weight'] = weights_df['risk_adjusted_weight'] / total_weight
+    
+    return weights_df
+
+portfolio_weights = calculate_patent_adjusted_weights(revenue_risk)
+print("\nPatent-adjusted portfolio weights:")
+print(portfolio_weights)
