@@ -19,8 +19,16 @@ def load_orange_book_data():
 
 # High-revenue drugs to focus on (you'll research these)
 target_drugs = {
-    'ELIQUIS': {'company': 'Pfizer/BMS', 'ticker': 'PFE', 'revenue_billions': 6.0},
-    'REVLIMID': {'company': 'Bristol Myers', 'ticker': 'BMY', 'revenue_billions': 12.8}
+'KEYTRUDA': {'company': 'Merck & Co.', 'ticker': 'MRK', 'revenue_billions': 31.0},
+'OZEMPIC': {'company': 'Novo Nordisk', 'ticker': 'NOVO B', 'revenue_billions': 21.0},
+'MOUNJARO': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 19.0},
+'DUPIXENT': {'company': 'Sanofi/Regeneron', 'ticker': 'SNY/REGN', 'revenue_billions': 17.0},
+'SKYRIZI': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 13.0},
+'ELIQUIS': {'company': 'Bristol Myers Squibb/Pfizer', 'ticker': 'BMY/PFE', 'revenue_billions': 13.0},
+'DARZALEX': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 13.0},
+'BIKTARVY': {'company': 'Gilead Sciences', 'ticker': 'GILD', 'revenue_billions': 13.0},
+'WEGOVY': {'company': 'Novo Nordisk', 'ticker': 'NOVO B', 'revenue_billions': 13.0},
+'ZEPBOUND': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 11.0}
 }
 def analyze_patent_cliffs(products, patents, target_drugs):
     """Find patent expiry dates for target drugs"""
