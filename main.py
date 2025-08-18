@@ -19,14 +19,37 @@ def load_orange_book_data():
 
 # High-revenue drugs to focus on (you'll research these)
 target_drugs = {
-'KEYTRUDA': {'company': 'Merck & Co.', 'ticker': 'MRK', 'revenue_billions': 31.0},
-'MOUNJARO': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 19.0},
-'SKYRIZI': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 13.0},
-'ELIQUIS': {'company': 'Bristol Myers Squibb/Pfizer', 'ticker': 'BMY', 'revenue_billions': 13.0},
-'DARZALEX': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 13.0},
-'BIKTARVY': {'company': 'Gilead Sciences', 'ticker': 'GILD', 'revenue_billions': 13.0},
-'ZEPBOUND': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 11.0}
+    # Your existing drugs...
+    'KEYTRUDA': {'company': 'Merck & Co.', 'ticker': 'MRK', 'revenue_billions': 31.0},
+    'MOUNJARO': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 19.0},
+    'SKYRIZI': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 13.0},
+    'ELIQUIS': {'company': 'Bristol Myers Squibb', 'ticker': 'BMY', 'revenue_billions': 13.0},
+    'DARZALEX': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 13.0},
+    'BIKTARVY': {'company': 'Gilead Sciences', 'ticker': 'GILD', 'revenue_billions': 13.0},
+    'ZEPBOUND': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 11.0},
+    'HUMIRA': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 12.2},
+    'REVLIMID': {'company': 'Bristol Myers Squibb', 'ticker': 'BMY', 'revenue_billions': 12.4},
+    'ENBREL': {'company': 'Amgen', 'ticker': 'AMGN', 'revenue_billions': 8.7},
+    'REMICADE': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 8.3},
+    'RITUXAN': {'company': 'Roche', 'ticker': 'ROG', 'revenue_billions': 7.1},
+    'LANTUS': {'company': 'Sanofi', 'ticker': 'SNY', 'revenue_billions': 7.0},
+    'COSENTYX': {'company': 'Novartis', 'ticker': 'NVS', 'revenue_billions': 6.1},
+    
+    # Additional high-revenue drugs:
+    'DUPIXENT': {'company': 'Sanofi', 'ticker': 'SNY', 'revenue_billions': 10.9},  # dermatology/asthma
+    'OZEMPIC': {'company': 'Novo Nordisk', 'ticker': 'NVO', 'revenue_billions': 14.2},  # diabetes/obesity
+    'WEGOVY': {'company': 'Novo Nordisk', 'ticker': 'NVO', 'revenue_billions': 4.5},   # obesity
+    'TRULICITY': {'company': 'Eli Lilly', 'ticker': 'LLY', 'revenue_billions': 7.4},   # diabetes
+    'IMBRUVICA': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 4.7},     # cancer
+    'VRAYLAR': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 4.5},       # mental health
+    'TECFIDERA': {'company': 'Biogen', 'ticker': 'BIIB', 'revenue_billions': 3.5},     # multiple sclerosis
+    'SPINRAZA': {'company': 'Biogen', 'ticker': 'BIIB', 'revenue_billions': 2.0},      # rare disease
+    'XARELTO': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 6.5},  # anticoagulant
+    'EYLEA': {'company': 'Regeneron', 'ticker': 'REGN', 'revenue_billions': 8.1},      # ophthalmology
+    'HERCEPTIN': {'company': 'Roche', 'ticker': 'ROG', 'revenue_billions': 6.4},       # cancer
+    'AVASTIN': {'company': 'Roche', 'ticker': 'ROG', 'revenue_billions': 6.2},         # cancer
 }
+
 def analyze_patent_cliffs(products, patents, target_drugs):
     """Find patent expiry dates for target drugs"""
     
