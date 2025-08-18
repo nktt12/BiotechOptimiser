@@ -2,14 +2,6 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 
-# Test with a few major pharma companies first
-pharma_tickers = ['PFE', 'JNJ', 'MRK', 'ABBV', 'BMY']
-
-# Download stock data to make sure everything works
-for ticker in pharma_tickers:
-    stock = yf.download(ticker, start='2020-01-01', end='2024-12-31')
-    print(f"{ticker}: {len(stock)} trading days downloaded")
-
 def load_orange_book_data():
     """Load the three Orange Book data files"""
     
@@ -24,10 +16,54 @@ def load_orange_book_data():
     
     return products, patents, exclusivity
 
-#Test data loading
-if __name__ == "__main__":
-    products, patents, exclusivity = load_orange_book_data()
+# High-revenue drugs to focus on (you'll research these)
+target_drugs = {
+    'ELIQUIS': {'company': 'Pfizer/BMS', 'ticker': 'PFE', 'revenue_billions': 6.0},
+    'REVLIMID': {'company': 'Bristol Myers', 'ticker': 'BMY', 'revenue_billions': 12.8},
+    'KEYTRUDA': {'company': 'Merck', 'ticker': 'MRK', 'revenue_billions': 20.9},
+    'HUMIRA': {'company': 'AbbVie', 'ticker': 'ABBV', 'revenue_billions': 21.2},
+    'OPDIVO': {'company': 'Bristol Myers', 'ticker': 'BMY', 'revenue_billions': 8.1}
+}
+def analyze_patent_cliffs(products, patents, target_drugs):
+    """Find patent expiry dates for target drugs"""
     
-    print(f"Products: {len(products)} rows")
-    print(f"Patents: {len(patents)} rows") 
-    print(f"Exclusivity: {len(exclusivity)} rows")
+    results = []
+    
+    for drug_name, drug_info in target_drugs.items():
+        # Find the drug in products
+        drug_products = products[products['Trade_Name'].str.upper().str.contains(drug_name, na=False)]
+        
+        if not drug_products.empty:
+            # Get NDA numbers for this drug
+            nda_numbers = drug_products['Appl_No'].unique()
+            
+            # Find patents for these NDAs
+            drug_patents = patents[patents['Appl_No'].isin(nda_numbers)].copy()
+            
+            # Convert patent expiry dates and find the latest one
+            drug_patents['Patent_Expire_Date_Text'] = pd.to_datetime(drug_patents['Patent_Expire_Date_Text'], errors='coerce')
+            latest_expiry = drug_patents['Patent_Expire_Date_Text'].max()
+            
+            results.append({
+                'drug': drug_name,
+                'company': drug_info['company'],
+                'ticker': drug_info['ticker'],
+                'revenue_billions': drug_info['revenue_billions'],
+                'latest_patent_expiry': latest_expiry,
+                'total_patents': len(drug_patents)
+            })
+    
+    return pd.DataFrame(results)
+
+# Run the analysis
+products, patents, exclusivity = load_orange_book_data()
+patent_cliff_analysis = analyze_patent_cliffs(products, patents, target_drugs)
+print(patent_cliff_analysis)
+
+# Calculate revenue at risk
+patent_cliff_analysis['months_to_expiry'] = (
+    patent_cliff_analysis['latest_patent_expiry'] - datetime.now()
+).dt.days / 30
+
+print("\nPatent Cliff Timeline:")
+print(patent_cliff_analysis[['drug', 'ticker', 'revenue_billions', 'months_to_expiry']].sort_values('months_to_expiry'))
