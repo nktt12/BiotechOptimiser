@@ -35,23 +35,48 @@ class PatentCliffBacktester:
         # Get stock price data for backtest period
         tickers = list(analysis_results['portfolio_weights']['ticker'].unique())
         
-        # Add benchmark ticker
-        all_tickers = tickers + [self.config['benchmark_ticker']]
+        print(f"Downloading stock data for {len(tickers)} tickers...")
         
-        stock_data = yf.download(
-            all_tickers,
+        # Download stock data
+        if len(tickers) > 1:
+            stock_data = yf.download(
+                tickers,
+                start=self.config['start_date'],
+                end=self.config['end_date'],
+                progress=False
+            )
+        else:
+            # Single ticker case
+            stock_data = yf.download(
+                tickers[0],
+                start=self.config['start_date'],
+                end=self.config['end_date'],
+                progress=False
+            )
+            # Convert to MultiIndex to match multi-ticker format
+            stock_data.columns = pd.MultiIndex.from_product([stock_data.columns, [tickers[0]]])
+        
+        print(f"Downloading benchmark data ({self.config['benchmark_ticker']})...")
+        
+        # Download benchmark data
+        benchmark_raw = yf.download(
+            self.config['benchmark_ticker'],
             start=self.config['start_date'],
             end=self.config['end_date'],
             progress=False
         )
         
-        # Download benchmark separately if needed
-        benchmark_data = yf.download(
-            self.config['benchmark_ticker'],
-            start=self.config['start_date'],
-            end=self.config['end_date'],
-            progress=False
-        )['Adj Close']
+        # Extract benchmark adjusted close price
+        if isinstance(benchmark_raw.columns, pd.MultiIndex):
+            # Multi-ticker format (shouldn't happen for single ticker, but just in case)
+            benchmark_data = benchmark_raw['Adj Close'].iloc[:, 0]
+        else:
+            # Single ticker format
+            if 'Adj Close' in benchmark_raw.columns:
+                benchmark_data = benchmark_raw['Adj Close']
+            else:
+                # Fallback to Close
+                benchmark_data = benchmark_raw['Close']
         
         return stock_data, benchmark_data, analysis_results
     
@@ -93,14 +118,44 @@ class PatentCliffBacktester:
         current_weights = pd.Series(dtype=float)
         
         # Get price data (use Adj Close)
-        if ('Adj Close',) in stock_data.columns.names:
-            prices = stock_data['Adj Close']
-        else:
+        try:
+            if isinstance(stock_data.columns, pd.MultiIndex):
+                # Multi-ticker download format
+                if 'Adj Close' in stock_data.columns.get_level_values(0):
+                    prices = stock_data['Adj Close']
+                elif 'Close' in stock_data.columns.get_level_values(0):
+                    prices = stock_data['Close']
+                else:
+                    # Use first price column available
+                    price_cols = stock_data.columns.get_level_values(0).unique()
+                    prices = stock_data[price_cols[0]]
+            else:
+                # Single ticker or flattened format
+                if 'Adj Close' in stock_data.columns:
+                    prices = stock_data['Adj Close'].to_frame()
+                elif 'Close' in stock_data.columns:
+                    prices = stock_data['Close'].to_frame()  
+                else:
+                    prices = stock_data
+                    
+        except Exception as e:
+            print(f"Error processing stock data columns: {e}")
+            print(f"Stock data columns: {stock_data.columns}")
+            # Fallback - use the data as-is
             prices = stock_data
         
         # Ensure we have data for our tickers
         available_tickers = [t for t in analysis_results['portfolio_weights']['ticker'] 
                            if t in prices.columns]
+        
+        if not available_tickers:
+            print(f"Warning: No matching tickers found!")
+            print(f"Portfolio tickers: {list(analysis_results['portfolio_weights']['ticker'])}")
+            print(f"Available price columns: {list(prices.columns)}")
+            # Try to match by name similarity or use all available
+            available_tickers = list(prices.columns)
+            
+        print(f"Using {len(available_tickers)} tickers for simulation: {available_tickers}")
         prices = prices[available_tickers]
         
         # Simulate day by day

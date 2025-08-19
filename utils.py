@@ -65,6 +65,7 @@ def calculate_returns(prices: pd.DataFrame) -> pd.DataFrame:
 def calculate_volatility(returns: pd.DataFrame, window: int = 252) -> pd.Series:
     """Calculate annualized volatility"""
     return returns.rolling(window=window).std() * np.sqrt(252)
+    #only 252 days in trading year
 
 def get_trading_dates(start_date: str, end_date: str, frequency: str = 'quarterly') -> List[datetime]:
     """Generate rebalancing dates based on frequency"""
@@ -104,7 +105,7 @@ def get_trading_dates(start_date: str, end_date: str, frequency: str = 'quarterl
     
     return dates
 
-def apply_position_limits(weights: pd.Series, min_weight: float = 0.05, max_weight: float = 0.20) -> pd.Series:
+def apply_position_limits(weights: pd.Series, min_weight: float = 0, max_weight: float = 0.90) -> pd.Series:
     """Apply minimum and maximum position limits to portfolio weights"""
     
     # Apply limits

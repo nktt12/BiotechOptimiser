@@ -56,7 +56,7 @@ BACKTEST_CONFIG = {
 RISK_PARAMETERS = {
     'lookback_window': 252,  # 1 year for volatility calculation
     'min_time_to_cliff': 0.5,  # Minimum 6 months to patent cliff
-    'max_revenue_risk_percent': 30,  # Maximum 30% of company revenue at risk
+    'max_revenue_risk_percent': 100,  # Maximum 30% of company revenue at risk
     'diversification_penalty': 0.1,  # 10% penalty per additional drug at risk
 }
 

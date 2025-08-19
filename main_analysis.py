@@ -181,8 +181,15 @@ class PatentCliffAnalyzer:
         
         # Apply position limits and normalize
         raw_weights = weights_df.set_index('ticker')['raw_weight']
+        # Add after calculating weights_df but before apply_position_limits
+        print("\nRaw weights before position limits:")
+        print(weights_df[['ticker', 'revenue_risk_percent', 'time_factor', 
+                        'risk_factor', 'diversification_factor', 'raw_weight']])
+
+        print(f"\nRaw weight range: {weights_df['raw_weight'].min():.4f} to {weights_df['raw_weight'].max():.4f}")
+        print(f"Raw weight std dev: {weights_df['raw_weight'].std():.4f}")
         adjusted_weights = apply_position_limits(raw_weights)
-        
+        print(f"\nAdjusted weights: {adjusted_weights}")
         weights_df['normalized_portfolio_weight'] = weights_df['ticker'].map(adjusted_weights)
         
         return weights_df
