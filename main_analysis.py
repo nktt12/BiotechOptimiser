@@ -198,7 +198,15 @@ class PatentCliffAnalyzer:
         """Create visualization plots"""
         
         plt.style.use('default')
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+        # Create 2x2 grid but use subplot2grid for custom layout
+        fig = plt.figure(figsize=(15, 12))
+        
+        # Top row: 2 plots side by side
+        ax1 = plt.subplot2grid((2, 2), (0, 0))
+        ax2 = plt.subplot2grid((2, 2), (0, 1))
+        
+        # Bottom row: 1 plot spanning both columns
+        ax3 = plt.subplot2grid((2, 2), (1, 0), colspan=2)
         
         # Plot 1: Stock prices over time
         tickers = revenue_risk['ticker'].unique()
@@ -216,10 +224,10 @@ class PatentCliffAnalyzer:
         
         # Plot 2: Risk vs Time to Patent Cliff
         scatter = ax2.scatter(revenue_risk['years_to_cliff'], 
-                             revenue_risk['revenue_at_risk_percent'],
-                             s=revenue_risk['drug_revenue']*20,
-                             alpha=0.6, c=revenue_risk['drug_revenue'], 
-                             cmap='viridis')
+                            revenue_risk['revenue_at_risk_percent'],
+                            s=revenue_risk['drug_revenue']*20,
+                            alpha=0.6, c=revenue_risk['drug_revenue'], 
+                            cmap='viridis')
         
         for _, row in revenue_risk.iterrows():
             if row['years_to_cliff'] > 0:  # Only label valid dates
@@ -234,7 +242,7 @@ class PatentCliffAnalyzer:
         ax2.grid(True, alpha=0.3)
         plt.colorbar(scatter, ax=ax2, label='Drug Revenue ($B)')
         
-        # Plot 3: Company revenue exposure
+        # Plot 3: Company revenue exposure (bottom, full width)
         company_summary = revenue_risk.groupby('ticker').agg({
             'revenue_at_risk_percent': 'sum',
             'drug_revenue': 'sum'
@@ -252,14 +260,6 @@ class PatentCliffAnalyzer:
             ax3.text(row['revenue_at_risk_percent'] + 0.5, i, 
                     f"{row['revenue_at_risk_percent']:.1f}%", 
                     va='center', fontsize=9)
-        
-        # Plot 4: Time to cliff distribution
-        valid_years = revenue_risk[revenue_risk['years_to_cliff'] > 0]['years_to_cliff']
-        ax4.hist(valid_years, bins=10, alpha=0.7, edgecolor='black')
-        ax4.set_xlabel('Years to Patent Cliff')
-        ax4.set_ylabel('Number of Drugs')
-        ax4.set_title('Distribution of Patent Cliff Timing', fontsize=14, fontweight='bold')
-        ax4.grid(True, alpha=0.3)
         
         plt.tight_layout()
         plt.show()
