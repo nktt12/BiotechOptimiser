@@ -701,7 +701,7 @@ def main():
     """Main execution function"""
     
     # Set path to historical patent data (update this path!)
-    historical_data_path = "/path/to/your/historical/orange_book_2019"
+    historical_data_path = "C:\Users\Nikhi\Desktop\BiotechOptimiser\BiotechOptimiser\historical_patent_data"
     
     # You can also run without historical data by setting this to None
     # historical_data_path = None
