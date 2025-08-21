@@ -1,6 +1,6 @@
 # backtest_engine.py
 """
-Patent Cliff Strategy Backtesting Engine
+Patent Cliff Strategy Backtesting Engine - Updated to use consolidated config
 Tests how the strategy would have performed from 2020-2024 using actual patent expiry data
 """
 
@@ -13,13 +13,13 @@ from typing import Dict, List, Tuple
 import warnings
 warnings.filterwarnings('ignore')
 
-from config import TARGET_DRUGS, BACKTEST_CONFIG, RISK_PARAMETERS
+from config import BACKTEST_TARGET_DRUGS, BACKTEST_CONFIG, BACKTEST_RISK_PARAMETERS
 from utils import (get_trading_dates, calculate_transaction_costs, apply_position_limits,
                    safe_divide, get_latest_revenues)
 
 class PatentCliffBacktester:
     """
-    Backtests the patent cliff avoidance strategy
+    Backtests the patent cliff avoidance strategy using known patent expiry dates
     """
     
     def __init__(self, start_date='2020-01-01', end_date='2024-12-31'):
@@ -30,50 +30,20 @@ class PatentCliffBacktester:
         self.benchmark_data = None
         self.portfolio_history = []
         self.performance_metrics = {}
+        self.drug_performance = {}
         
     def load_historical_data(self):
-        """Load stock price data, benchmark, and your 2019 Orange Book snapshot"""
+        """Load stock price data and benchmark"""
         print(f"Loading data from {self.start_date} to {self.end_date}...")
         
-        # Load your 2019 Orange Book snapshot
-        print("Loading 2019 Orange Book snapshot...")
-        try:
-            # Update these paths to point to your 2019 Orange Book files
-            ORANGE_BOOK_2019_PATHS = {
-                'products': 'C:\Users\Nikhi\Desktop\BiotechOptimiser\BiotechOptimiser\historical_patent_data\2019-09-01\products.txt',  # Update this path
-                'patents': 'C:\Users\Nikhi\Desktop\BiotechOptimiser\BiotechOptimiser\historical_patent_data\2019-09-01\patent.txt',     # Update this path
-                'exclusivity': 'C:\Users\Nikhi\Desktop\BiotechOptimiser\BiotechOptimiser\historical_patent_data\2019-09-01\exclusivity.txt'  # Update this path
-            }
-            
-            # Load the 2019 Orange Book data
-            self.orange_book_products = pd.read_csv(
-                ORANGE_BOOK_2019_PATHS['products'], 
-                sep='~', 
-                encoding='latin-1'
-            )
-            self.orange_book_patents = pd.read_csv(
-                ORANGE_BOOK_2019_PATHS['patents'], 
-                sep='~', 
-                encoding='latin-1'
-            )
-            self.orange_book_exclusivity = pd.read_csv(
-                ORANGE_BOOK_2019_PATHS['exclusivity'], 
-                sep='~', 
-                encoding='latin-1'
-            )
-            
-            print(f"✓ Loaded Orange Book data:")
-            print(f"  - {len(self.orange_book_products)} products")
-            print(f"  - {len(self.orange_book_patents)} patents") 
-            print(f"  - {len(self.orange_book_exclusivity)} exclusivity records")
-            
-        except Exception as e:
-            print(f"✗ Error loading Orange Book data: {e}")
-            print("Please update the file paths in ORANGE_BOOK_2019_PATHS")
-            return False
+        # Get unique tickers from backtest target drugs
+        tickers = list(set([drug['ticker'] for drug in BACKTEST_TARGET_DRUGS.values()]))
         
-        # Get unique tickers from target drugs
-        tickers = list(set([drug['ticker'] for drug in TARGET_DRUGS.values()]))
+        print(f"Target drugs for backtest: {len(BACKTEST_TARGET_DRUGS)}")
+        expired_count = sum(1 for drug in BACKTEST_TARGET_DRUGS.values() if drug.get('status') == 'expired_in_period')
+        protected_count = sum(1 for drug in BACKTEST_TARGET_DRUGS.values() if drug.get('status') == 'still_protected')
+        print(f"  - Drugs that expired 2020-2024: {expired_count}")
+        print(f"  - Drugs still protected: {protected_count}")
         
         # Download stock data
         try:
@@ -96,40 +66,41 @@ class PatentCliffBacktester:
     def get_patent_cliff_weights(self, current_date: datetime) -> pd.Series:
         """
         Calculate portfolio weights based on patent cliff risk at a specific date
-        This is where you'd integrate your actual 2020-2024 patent expiry data
+        Uses known patent expiry dates from backtest configuration
         """
         
         weights = {}
+        current_timestamp = pd.Timestamp(current_date)
         
-        for drug_name, drug_info in TARGET_DRUGS.items():
+        for drug_name, drug_info in BACKTEST_TARGET_DRUGS.items():
             ticker = drug_info['ticker']
             
-            # Get actual patent expiry from your 2019 Orange Book snapshot
-            patent_expiry = self.get_patent_expiry_from_orange_book(drug_name, current_date)
-            
-            if patent_expiry is None:
+            # Parse patent expiry date
+            try:
+                patent_expiry = pd.Timestamp(drug_info['patent_expiry'])
+            except:
+                print(f"Warning: Could not parse patent expiry for {drug_name}")
                 continue
-                
+            
             # Calculate years to expiry
-            days_to_expiry = (patent_expiry - current_date).days
+            days_to_expiry = (patent_expiry - current_timestamp).days
             years_to_expiry = days_to_expiry / 365.25
             
-            # Skip if patent has already expired or expires very soon
-            if years_to_expiry < RISK_PARAMETERS['min_time_to_cliff']:
-                continue
-                
             # Calculate risk-adjusted weight
             weight = self.calculate_risk_weight(
                 ticker=ticker,
+                drug_name=drug_name,
                 drug_revenue=drug_info['revenue_billions'],
                 years_to_expiry=years_to_expiry,
-                current_date=current_date
+                current_date=current_date,
+                drug_status=drug_info.get('status', 'unknown')
             )
             
-            if ticker in weights:
-                weights[ticker] += weight
-            else:
-                weights[ticker] = weight
+            if weight > 0:
+                if ticker in weights:
+                    weights[ticker] += weight
+                else:
+                    weights[ticker] = weight
         
         # Convert to Series and normalize
         weights_series = pd.Series(weights)
@@ -144,73 +115,42 @@ class PatentCliffBacktester:
         
         return weights_series
     
-    def get_patent_expiry_from_orange_book(self, drug_name: str, current_date: datetime) -> datetime:
-        """
-        Get actual patent expiry from your 2019 Orange Book snapshot
-        """
-        if not hasattr(self, 'orange_book_products') or not hasattr(self, 'orange_book_patents'):
-            return None
-            
-        # Find the drug in products (case-insensitive search)
-        drug_products = self.orange_book_products[
-            self.orange_book_products['Trade_Name'].str.upper().str.contains(
-                drug_name.upper(), na=False
-            )
-        ]
-        
-        if drug_products.empty:
-            return None
-        
-        # Get NDA numbers for this drug
-        nda_numbers = drug_products['Appl_No'].unique()
-        
-        # Find all patents for these NDAs
-        drug_patents = self.orange_book_patents[
-            self.orange_book_patents['Appl_No'].isin(nda_numbers)
-        ].copy()
-        
-        if drug_patents.empty:
-            return None
-            
-        # Convert patent expiry dates
-        drug_patents['Patent_Expire_Date_Text'] = pd.to_datetime(
-            drug_patents['Patent_Expire_Date_Text'], errors='coerce'
-        )
-        
-        # Filter out invalid dates and patents that expired before current_date
-        valid_patents = drug_patents[
-            (drug_patents['Patent_Expire_Date_Text'].notna()) & 
-            (drug_patents['Patent_Expire_Date_Text'] > current_date)
-        ]
-        
-        if valid_patents.empty:
-            return None
-            
-        # Return the LATEST expiry date (last patent to expire)
-        latest_expiry = valid_patents['Patent_Expire_Date_Text'].max()
-        return latest_expiry
-    
-    def calculate_risk_weight(self, ticker: str, drug_revenue: float, 
-                            years_to_expiry: float, current_date: datetime) -> float:
+    def calculate_risk_weight(self, ticker: str, drug_name: str, drug_revenue: float, 
+                            years_to_expiry: float, current_date: datetime, drug_status: str) -> float:
         """Calculate risk-adjusted weight for a company/drug"""
         
+        # If drug has already expired, give it zero weight
+        if years_to_expiry <= 0 or drug_status == 'expired_in_period':
+            return BACKTEST_RISK_PARAMETERS.get('expired_drug_weight', 0.0)
+        
         # Time decay factor - reduce weight as expiry approaches
-        if years_to_expiry <= 1:
-            time_factor = 0.1  # Very low weight if expiring within 1 year
-        elif years_to_expiry <= 2:
-            time_factor = 0.3  # Low weight if expiring within 2 years
-        elif years_to_expiry <= 3:
-            time_factor = 0.6  # Medium weight if expiring within 3 years
+        cliff_horizon = BACKTEST_RISK_PARAMETERS.get('cliff_horizon_years', 2.0)
+        risk_decay = BACKTEST_RISK_PARAMETERS.get('risk_decay_factor', 0.5)
+        
+        if years_to_expiry <= 0.25:  # Less than 3 months
+            time_factor = 0.05
+        elif years_to_expiry <= 0.5:  # Less than 6 months
+            time_factor = 0.1
+        elif years_to_expiry <= 1.0:  # Less than 1 year
+            time_factor = 0.2
+        elif years_to_expiry <= cliff_horizon:  # Within cliff horizon
+            # Gradual decay within cliff horizon
+            decay_progress = (cliff_horizon - years_to_expiry) / cliff_horizon
+            time_factor = 1.0 - (decay_progress * risk_decay)
+            time_factor = max(0.2, time_factor)
         else:
-            time_factor = 1.0  # Full weight if expiring in 3+ years
+            time_factor = 1.0  # Full weight if well beyond cliff horizon
         
         # Revenue size factor - larger revenue drugs get higher base weight
-        revenue_factor = min(1.0, drug_revenue / 5.0)  # Scale by $5B revenue
+        revenue_factor = min(1.0, drug_revenue / 10.0)  # Scale by $10B revenue
+        
+        # Status bonus - drugs still protected get bonus
+        status_factor = 1.2 if drug_status == 'still_protected' else 1.0
         
         # Combined weight
-        weight = time_factor * revenue_factor
+        weight = time_factor * revenue_factor * status_factor
         
-        return max(0.01, weight)  # Minimum weight to avoid zero positions
+        return max(0.001, weight)  # Minimum weight to avoid zero positions
     
     def rebalance_portfolio(self, rebalance_date: datetime, 
                           current_weights: pd.Series) -> Tuple[pd.Series, float]:
@@ -321,7 +261,56 @@ class PatentCliffBacktester:
         # Calculate performance metrics
         self.calculate_performance_metrics()
         
+        # Analyze drug-specific performance
+        self.analyze_drug_performance()
+        
         return self.portfolio_history
+    
+    def analyze_drug_performance(self):
+        """Analyze performance attribution by drug status"""
+        
+        # Separate performance by drug status
+        expired_drugs = {k: v for k, v in BACKTEST_TARGET_DRUGS.items() if v.get('status') == 'expired_in_period'}
+        protected_drugs = {k: v for k, v in BACKTEST_TARGET_DRUGS.items() if v.get('status') == 'still_protected'}
+        
+        expired_tickers = list(set([drug['ticker'] for drug in expired_drugs.values()]))
+        protected_tickers = list(set([drug['ticker'] for drug in protected_drugs.values()]))
+        
+        # Calculate average performance for each group
+        performance_analysis = {
+            'expired_drugs': {
+                'count': len(expired_drugs),
+                'tickers': expired_tickers,
+                'avg_revenue': np.mean([drug['revenue_billions'] for drug in expired_drugs.values()]),
+            },
+            'protected_drugs': {
+                'count': len(protected_drugs),
+                'tickers': protected_tickers,
+                'avg_revenue': np.mean([drug['revenue_billions'] for drug in protected_drugs.values()]),
+            }
+        }
+        
+        # Calculate stock performance for each group
+        if hasattr(self, 'stock_data') and len(self.stock_data) > 0:
+            for group_name, group_data in performance_analysis.items():
+                tickers = group_data['tickers']
+                returns = []
+                
+                for ticker in tickers:
+                    if ('Close', ticker) in self.stock_data.columns:
+                        prices = self.stock_data[('Close', ticker)].dropna()
+                        if len(prices) > 1:
+                            total_return = (prices.iloc[-1] - prices.iloc[0]) / prices.iloc[0]
+                            returns.append(total_return)
+                
+                if returns:
+                    group_data['avg_return'] = np.mean(returns)
+                    group_data['return_std'] = np.std(returns)
+                else:
+                    group_data['avg_return'] = 0
+                    group_data['return_std'] = 0
+        
+        self.drug_performance = performance_analysis
     
     def calculate_performance_metrics(self):
         """Calculate comprehensive performance metrics"""
@@ -346,8 +335,8 @@ class PatentCliffBacktester:
         
         # Sharpe ratio (assuming 2% risk-free rate)
         risk_free_rate = 0.02
-        portfolio_sharpe = (annual_portfolio_return - risk_free_rate) / portfolio_vol
-        benchmark_sharpe = (annual_benchmark_return - risk_free_rate) / benchmark_vol
+        portfolio_sharpe = (annual_portfolio_return - risk_free_rate) / portfolio_vol if portfolio_vol > 0 else 0
+        benchmark_sharpe = (annual_benchmark_return - risk_free_rate) / benchmark_vol if benchmark_vol > 0 else 0
         
         # Maximum drawdown
         portfolio_peak = np.maximum.accumulate(portfolio_values)
@@ -355,7 +344,7 @@ class PatentCliffBacktester:
         max_drawdown = np.min(portfolio_drawdown)
         
         # Win rate
-        win_rate = np.sum(np.array(daily_returns) > 0) / len(daily_returns)
+        win_rate = np.sum(np.array(daily_returns) > 0) / len(daily_returns) if len(daily_returns) > 0 else 0
         
         self.performance_metrics = {
             'Total Portfolio Return': f"{total_portfolio_return:.2%}",
@@ -377,7 +366,7 @@ class PatentCliffBacktester:
     def plot_results(self):
         """Create comprehensive visualization of backtest results"""
         
-        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         
         dates = self.portfolio_history['dates']
         portfolio_values = self.portfolio_history['portfolio_values']
@@ -385,52 +374,72 @@ class PatentCliffBacktester:
         
         # Plot 1: Portfolio vs Benchmark Performance
         ax1 = axes[0, 0]
-        ax1.plot(dates, portfolio_values, label='Patent Cliff Strategy', linewidth=2)
-        ax1.plot(dates, benchmark_values, label='S&P 500 Benchmark', linewidth=2)
-        ax1.set_title('Portfolio Performance vs Benchmark')
+        ax1.plot(dates, portfolio_values, label='Patent Cliff Avoidance Strategy', linewidth=2, color='blue')
+        ax1.plot(dates, benchmark_values, label='S&P 500 Benchmark', linewidth=2, color='gray')
+        ax1.set_title('Portfolio Performance vs Benchmark (2020-2024)', fontweight='bold', fontsize=12)
         ax1.set_ylabel('Portfolio Value ($)')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
+        ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
         
-        # Plot 2: Rolling Returns
+        # Plot 2: Drug Performance by Status
         ax2 = axes[0, 1]
+        if hasattr(self, 'drug_performance'):
+            expired_return = self.drug_performance['expired_drugs'].get('avg_return', 0)
+            protected_return = self.drug_performance['protected_drugs'].get('avg_return', 0)
+            
+            bars = ax2.bar(['Drugs w/ Patent Cliffs\n(2020-2024)', 'Protected Drugs\n(No Cliffs)'], 
+                          [expired_return * 100, protected_return * 100],
+                          color=['red', 'green'], alpha=0.7)
+            ax2.set_title('Average Stock Performance by Patent Status', fontweight='bold', fontsize=12)
+            ax2.set_ylabel('Total Return (%)')
+            ax2.grid(True, alpha=0.3, axis='y')
+            
+            # Add value labels on bars
+            for i, bar in enumerate(bars):
+                height = bar.get_height()
+                ax2.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                        f'{height:.1f}%', ha='center', va='bottom', fontweight='bold')
+        
+        # Plot 3: Rolling Returns
+        ax3 = axes[1, 0]
         portfolio_returns = np.array(self.portfolio_history['daily_returns'])
         rolling_returns = pd.Series(portfolio_returns).rolling(window=63).mean() * 252  # 3-month rolling annualized
-        ax2.plot(dates[62:], rolling_returns[62:], label='3-Month Rolling Return')
-        ax2.axhline(y=0, color='red', linestyle='--', alpha=0.5)
-        ax2.set_title('Rolling Annualized Returns')
-        ax2.set_ylabel('Return')
-        ax2.grid(True, alpha=0.3)
-        
-        # Plot 3: Drawdown
-        ax3 = axes[1, 0]
-        portfolio_peak = np.maximum.accumulate(portfolio_values)
-        drawdown = (np.array(portfolio_values) - portfolio_peak) / portfolio_peak * 100
-        ax3.fill_between(dates, drawdown, 0, alpha=0.3, color='red')
-        ax3.plot(dates, drawdown, color='red')
-        ax3.set_title('Portfolio Drawdown')
-        ax3.set_ylabel('Drawdown (%)')
+        ax3.plot(dates[62:], rolling_returns[62:], label='3-Month Rolling Return', color='blue')
+        ax3.axhline(y=0, color='red', linestyle='--', alpha=0.5)
+        ax3.set_title('Rolling Annualized Returns', fontweight='bold', fontsize=12)
+        ax3.set_ylabel('Annualized Return')
         ax3.grid(True, alpha=0.3)
+        ax3.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.0%}'))
         
         # Plot 4: Weight Evolution
         ax4 = axes[1, 1]
         weight_dates = [w['date'] for w in self.portfolio_history['weight_history']]
         
-        # Get top 5 most frequently held stocks
-        all_tickers = set()
+        # Get top tickers by average weight
+        all_weights = {}
         for w in self.portfolio_history['weight_history']:
-            all_tickers.update(w['weights'].index)
+            for ticker, weight in w['weights'].items():
+                if ticker not in all_weights:
+                    all_weights[ticker] = []
+                all_weights[ticker].append(weight)
         
-        for ticker in list(all_tickers)[:5]:  # Show top 5 for clarity
+        # Calculate average weights and show top 5
+        avg_weights = {ticker: np.mean(weights) for ticker, weights in all_weights.items()}
+        top_tickers = sorted(avg_weights.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        colors = ['blue', 'green', 'red', 'purple', 'orange']
+        for i, (ticker, _) in enumerate(top_tickers):
             weights = []
             for w in self.portfolio_history['weight_history']:
-                weights.append(w['weights'].get(ticker, 0))
-            ax4.plot(weight_dates, weights, label=ticker, marker='o', markersize=3)
+                weights.append(w['weights'].get(ticker, 0) * 100)  # Convert to percentage
+            ax4.plot(weight_dates, weights, label=ticker, marker='o', markersize=3, color=colors[i])
         
-        ax4.set_title('Portfolio Weights Over Time')
+        ax4.set_title('Portfolio Weights Over Time (Top 5 Holdings)', fontweight='bold', fontsize=12)
         ax4.set_ylabel('Weight (%)')
         ax4.legend()
         ax4.grid(True, alpha=0.3)
+        ax4.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.0f}%'))
         
         plt.tight_layout()
         plt.show()
@@ -438,35 +447,65 @@ class PatentCliffBacktester:
     def print_performance_summary(self):
         """Print detailed performance summary"""
         
-        print("\n" + "="*60)
-        print("PATENT CLIFF STRATEGY BACKTEST RESULTS")
-        print("="*60)
+        print("\n" + "="*70)
+        print("PATENT CLIFF AVOIDANCE STRATEGY BACKTEST RESULTS (2020-2024)")
+        print("="*70)
         
         for metric, value in self.performance_metrics.items():
-            print(f"{metric:<30} {value}")
+            print(f"{metric:<35} {value}")
         
-        print("\n" + "="*60)
-        print("REBALANCING SUMMARY")
-        print("="*60)
+        print("\n" + "="*70)
+        print("DRUG PERFORMANCE ANALYSIS")
+        print("="*70)
         
-        print(f"Rebalancing frequency: {BACKTEST_CONFIG['rebalance_frequency']}")
-        print(f"Number of rebalances: {len(self.portfolio_history['weight_history'])}")
-        print(f"Average transaction cost per rebalance: ${self.portfolio_history['total_transaction_costs']/len(self.portfolio_history['weight_history']):,.0f}")
+        if hasattr(self, 'drug_performance'):
+            for group_name, group_data in self.drug_performance.items():
+                group_title = "DRUGS WITH PATENT CLIFFS (2020-2024)" if group_name == 'expired_drugs' else "PROTECTED DRUGS (NO CLIFFS)"
+                print(f"\n{group_title}:")
+                print(f"  Number of drugs: {group_data['count']}")
+                print(f"  Average revenue: ${group_data['avg_revenue']:.1f}B")
+                if 'avg_return' in group_data:
+                    print(f"  Average stock return: {group_data['avg_return']:.2%}")
+                    print(f"  Return volatility: {group_data.get('return_std', 0):.2%}")
+                print(f"  Tickers: {', '.join(group_data['tickers'])}")
         
-        # Show some example rebalancing dates and weights
-        print("\nSample Rebalancing Events:")
-        for i in range(0, min(5, len(self.portfolio_history['weight_history'])), 1):
-            rebalance = self.portfolio_history['weight_history'][i]
-            print(f"\n{rebalance['date'].strftime('%Y-%m-%d')}:")
-            top_weights = rebalance['weights'].nlargest(3)
-            for ticker, weight in top_weights.items():
-                print(f"  {ticker}: {weight:.1%}")
+        print("\n" + "="*70)
+        print("PATENT CLIFF TIMELINE (Target Drugs)")
+        print("="*70)
+        
+        cliff_events = []
+        for drug_name, drug_info in BACKTEST_TARGET_DRUGS.items():
+            try:
+                cliff_date = pd.Timestamp(drug_info['patent_expiry'])
+                cliff_events.append({
+                    'drug': drug_name,
+                    'company': drug_info['company'],
+                    'ticker': drug_info['ticker'],
+                    'revenue': drug_info['revenue_billions'],
+                    'expiry': cliff_date,
+                    'status': drug_info.get('status', 'unknown')
+                })
+            except:
+                continue
+        
+        # Sort by expiry date
+        cliff_events.sort(key=lambda x: x['expiry'])
+        
+        print("Chronological order of patent expiries:")
+        for event in cliff_events:
+            status_marker = "🔴" if event['status'] == 'expired_in_period' else "🟢"
+            print(f"{status_marker} {event['expiry'].strftime('%Y-%m-%d')}: {event['drug']} ({event['ticker']}) - ${event['revenue']:.1f}B revenue")
+        
+        print(f"\n🔴 = Expired during backtest period (2020-2024)")
+        print(f"🟢 = Still protected beyond 2024")
 
 def main():
     """Main execution function"""
     
-    print("Patent Cliff Strategy Backtester")
-    print("="*50)
+    print("Patent Cliff Strategy Backtester - Using Consolidated Config")
+    print("="*60)
+    print("Testing patent cliff avoidance using historical data (2020-2024)")
+    print(f"Using {len(BACKTEST_TARGET_DRUGS)} target drugs with known patent cliff dates")
     
     # Initialize backtester
     backtester = PatentCliffBacktester(
