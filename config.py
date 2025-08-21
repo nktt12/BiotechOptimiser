@@ -10,7 +10,7 @@ DATA_PATHS = {
     'exclusivity': 'data/exclusivity.txt'
 }
 
-# High-revenue drugs to focus on
+# High-revenue drugs to focus on (for current analysis)
 TARGET_DRUGS = {
     # Johnson & Johnson - Top 10 drugs
     'DARZALEX': {'company': 'Johnson & Johnson', 'ticker': 'JNJ', 'revenue_billions': 13.2},
@@ -133,6 +133,153 @@ TARGET_DRUGS = {
     'CANCER_VACCINE': {'company': 'Moderna', 'ticker': 'MRNA', 'revenue_billions': 0.0},
 }
 
+# BACKTEST-SPECIFIC DRUG LIST (for historical backtesting 2020-2024)
+BACKTEST_TARGET_DRUGS = {
+    # DRUGS THAT EXPIRED DURING 2020-2024 (10 drugs)
+    'PLAVIX': {
+        'company': 'Bristol Myers Squibb', 
+        'ticker': 'BMY', 
+        'revenue_billions': 6.8,
+        'patent_expiry': '2020-05-17',
+        'status': 'expired_in_period'
+    },
+    'HUMIRA_BACKTEST': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 18.5,
+        'patent_expiry': '2023-01-31',  # US biosimilar entry
+        'status': 'expired_in_period'
+    },
+    'VYVANSE': {
+        'company': 'Takeda', 
+        'ticker': 'TAK', 
+        'revenue_billions': 2.5,
+        'patent_expiry': '2023-02-24',
+        'status': 'expired_in_period'
+    },
+    'COPAXONE': {
+        'company': 'Teva', 
+        'ticker': 'TEVA', 
+        'revenue_billions': 1.8,
+        'patent_expiry': '2020-09-15',
+        'status': 'expired_in_period'
+    },
+    'REVLIMID_BACKTEST': {
+        'company': 'Bristol Myers Squibb', 
+        'ticker': 'BMY', 
+        'revenue_billions': 12.1,
+        'patent_expiry': '2022-10-31',
+        'status': 'expired_in_period'
+    },
+    'GLEEVEC': {
+        'company': 'Novartis', 
+        'ticker': 'NVS', 
+        'revenue_billions': 4.7,
+        'patent_expiry': '2021-07-30',
+        'status': 'expired_in_period'
+    },
+    'CIALIS': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 1.4,
+        'patent_expiry': '2020-10-06',
+        'status': 'expired_in_period'
+    },
+    'AVASTIN': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 7.1,
+        'patent_expiry': '2024-02-26',
+        'status': 'expired_in_period'
+    },
+    'BOTOX_BACKTEST': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 4.9,
+        'patent_expiry': '2022-12-15',
+        'status': 'expired_in_period'
+    },
+    'REMICADE': {
+        'company': 'Johnson & Johnson', 
+        'ticker': 'JNJ', 
+        'revenue_billions': 4.2,
+        'patent_expiry': '2021-09-23',
+        'status': 'expired_in_period'
+    },
+    
+    # DRUGS STILL PROTECTED (10 drugs) - These should get higher weights
+    'KEYTRUDA_BACKTEST': {
+        'company': 'Merck & Co.', 
+        'ticker': 'MRK', 
+        'revenue_billions': 31.0,
+        'patent_expiry': '2028-09-30',
+        'status': 'still_protected'
+    },
+    'OPDIVO_BACKTEST': {
+        'company': 'Bristol Myers Squibb', 
+        'ticker': 'BMY', 
+        'revenue_billions': 9.1,
+        'patent_expiry': '2026-06-30',
+        'status': 'still_protected'
+    },
+    'ELIQUIS_BACKTEST': {
+        'company': 'Bristol Myers Squibb', 
+        'ticker': 'BMY', 
+        'revenue_billions': 13.5,
+        'patent_expiry': '2026-12-28',
+        'status': 'still_protected'
+    },
+    'SKYRIZI_BACKTEST': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 13.7,
+        'patent_expiry': '2029-04-15',
+        'status': 'still_protected'
+    },
+    'TRULICITY_BACKTEST': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 7.4,
+        'patent_expiry': '2027-03-18',
+        'status': 'still_protected'
+    },
+    'STELARA_BACKTEST': {
+        'company': 'Johnson & Johnson', 
+        'ticker': 'JNJ', 
+        'revenue_billions': 10.4,
+        'patent_expiry': '2025-09-23',
+        'status': 'still_protected'
+    },
+    'XARELTO_BACKTEST': {
+        'company': 'Johnson & Johnson', 
+        'ticker': 'JNJ', 
+        'revenue_billions': 6.5,
+        'patent_expiry': '2025-07-15',
+        'status': 'still_protected'
+    },
+    'IBRANCE_BACKTEST': {
+        'company': 'Pfizer', 
+        'ticker': 'PFE', 
+        'revenue_billions': 5.9,
+        'patent_expiry': '2027-11-30',
+        'status': 'still_protected'
+    },
+    'REPATHA_BACKTEST': {
+        'company': 'Amgen', 
+        'ticker': 'AMGN', 
+        'revenue_billions': 2.6,
+        'patent_expiry': '2029-08-27',
+        'status': 'still_protected'
+    },
+    'BIKTARVY_BACKTEST': {
+        'company': 'Gilead Sciences', 
+        'ticker': 'GILD', 
+        'revenue_billions': 13.4,
+        'patent_expiry': '2030-02-28',
+        'status': 'still_protected'
+    }
+}
+
 # Backtesting parameters
 BACKTEST_CONFIG = {
     'start_date': '2020-01-01',
@@ -140,9 +287,10 @@ BACKTEST_CONFIG = {
     'rebalance_frequency': 'quarterly',  # 'monthly', 'quarterly', 'annually'
     'initial_capital': 100000,  # $100k
     'transaction_cost': 0.001,  # 0.1% transaction cost
-    'min_weight': 0.05,  # Minimum 5% allocation
-    'max_weight': 0.20,  # Maximum 20% allocation
+    'min_weight': 0.02,  # Minimum 2% allocation
+    'max_weight': 0.15,  # Maximum 15% allocation per position
     'benchmark_ticker': 'SPY',  # S&P 500 benchmark
+    'use_backtest_drugs': True,  # Flag to use backtest-specific drug list
 }
 
 # Risk model parameters
@@ -151,6 +299,16 @@ RISK_PARAMETERS = {
     'min_time_to_cliff': 0.5,  # Minimum 6 months to patent cliff
     'max_revenue_risk_percent': 100,  # Maximum 30% of company revenue at risk
     'diversification_penalty': 0.1,  # 10% penalty per additional drug at risk
+}
+
+# Risk model parameters for backtesting
+BACKTEST_RISK_PARAMETERS = {
+    'lookback_window': 252,  # 1 year for volatility calculation
+    'min_time_to_cliff': 0.25,  # Minimum 3 months to patent cliff
+    'cliff_horizon_years': 2.0,  # Start reducing weight 2 years before cliff
+    'expired_drug_weight': 0.0,  # No weight for drugs that have already expired
+    'diversification_penalty': 0.05,  # 5% penalty per additional drug at risk per company
+    'risk_decay_factor': 0.5,  # How aggressively to reduce weight as cliff approaches
 }
 
 # Analysis parameters
