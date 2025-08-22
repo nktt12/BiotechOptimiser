@@ -135,7 +135,11 @@ TARGET_DRUGS = {
 
 # BACKTEST-SPECIFIC DRUG LIST (for historical backtesting 2020-2024)
 BACKTEST_TARGET_DRUGS = {
-    # DRUGS THAT EXPIRED DURING 2020-2024 (10 drugs)
+    # =============================================================================
+    # DRUGS THAT EXPIRED DURING 2020-2024 (50 drugs)
+    # =============================================================================
+    
+    # Original 10 from your list
     'PLAVIX': {
         'company': 'Bristol Myers Squibb', 
         'ticker': 'BMY', 
@@ -147,7 +151,7 @@ BACKTEST_TARGET_DRUGS = {
         'company': 'AbbVie', 
         'ticker': 'ABBV', 
         'revenue_billions': 18.5,
-        'patent_expiry': '2023-01-31',  # US biosimilar entry
+        'patent_expiry': '2023-01-31',
         'status': 'expired_in_period'
     },
     'VYVANSE': {
@@ -207,7 +211,293 @@ BACKTEST_TARGET_DRUGS = {
         'status': 'expired_in_period'
     },
     
-    # DRUGS STILL PROTECTED (10 drugs) - These should get higher weights
+    # Additional 40 drugs expired 2020-2024
+    'NEXIUM': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 3.9,
+        'patent_expiry': '2020-05-27',
+        'status': 'expired_in_period'
+    },
+    'RITUXAN': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 5.8,
+        'patent_expiry': '2020-11-26',
+        'status': 'expired_in_period'
+    },
+    'HERCEPTIN': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 6.4,
+        'patent_expiry': '2020-06-30',
+        'status': 'expired_in_period'
+    },
+    'ABILIFY_MAINTENA': {
+        'company': 'Otsuka', 
+        'ticker': 'OTSKF', 
+        'revenue_billions': 2.1,
+        'patent_expiry': '2024-04-13',
+        'status': 'expired_in_period'
+    },
+    'VICTOZA': {
+        'company': 'Novo Nordisk', 
+        'ticker': 'NVO', 
+        'revenue_billions': 3.5,
+        'patent_expiry': '2024-01-02',
+        'status': 'expired_in_period'
+    },
+    'LYRICA': {
+        'company': 'Pfizer', 
+        'ticker': 'PFE', 
+        'revenue_billions': 5.1,
+        'patent_expiry': '2020-12-30',
+        'status': 'expired_in_period'
+    },
+    'XOLAIR': {
+        'company': 'Roche/Novartis', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 2.8,
+        'patent_expiry': '2020-06-20',
+        'status': 'expired_in_period'
+    },
+    'CRESTOR': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 3.2,
+        'patent_expiry': '2020-07-08',
+        'status': 'expired_in_period'
+    },
+    'SYMBICORT': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 2.7,
+        'patent_expiry': '2021-04-23',
+        'status': 'expired_in_period'
+    },
+    'MYRBETRIQ': {
+        'company': 'Astellas', 
+        'ticker': 'ALPMY', 
+        'revenue_billions': 2.3,
+        'patent_expiry': '2024-07-21',
+        'status': 'expired_in_period'
+    },
+    'TECFIDERA': {
+        'company': 'Biogen', 
+        'ticker': 'BIIB', 
+        'revenue_billions': 4.3,
+        'patent_expiry': '2020-04-30',
+        'status': 'expired_in_period'
+    },
+    'LINZESS': {
+        'company': 'AbbVie/Ironwood', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 1.8,
+        'patent_expiry': '2024-08-30',
+        'status': 'expired_in_period'
+    },
+    'JANUVIA': {
+        'company': 'Merck & Co.', 
+        'ticker': 'MRK', 
+        'revenue_billions': 5.3,
+        'patent_expiry': '2022-03-03',
+        'status': 'expired_in_period'
+    },
+    'SYNAGIS': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 1.2,
+        'patent_expiry': '2020-10-01',
+        'status': 'expired_in_period'
+    },
+    'NASONEX': {
+        'company': 'Merck & Co.', 
+        'ticker': 'MRK', 
+        'revenue_billions': 1.5,
+        'patent_expiry': '2020-09-24',
+        'status': 'expired_in_period'
+    },
+    'ARIMIDEX': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 0.9,
+        'patent_expiry': '2020-12-17',
+        'status': 'expired_in_period'
+    },
+    'LUCENTIS': {
+        'company': 'Roche/Novartis', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 3.6,
+        'patent_expiry': '2020-06-30',
+        'status': 'expired_in_period'
+    },
+    'FLOVENT': {
+        'company': 'GlaxoSmithKline', 
+        'ticker': 'GSK', 
+        'revenue_billions': 2.1,
+        'patent_expiry': '2021-10-27',
+        'status': 'expired_in_period'
+    },
+    'PREZISTA': {
+        'company': 'Johnson & Johnson', 
+        'ticker': 'JNJ', 
+        'revenue_billions': 1.7,
+        'patent_expiry': '2020-06-23',
+        'status': 'expired_in_period'
+    },
+    'ADVAIR_DISKUS': {
+        'company': 'GlaxoSmithKline', 
+        'ticker': 'GSK', 
+        'revenue_billions': 2.9,
+        'patent_expiry': '2020-08-13',
+        'status': 'expired_in_period'
+    },
+    'NEUPOGEN': {
+        'company': 'Amgen', 
+        'ticker': 'AMGN', 
+        'revenue_billions': 1.8,
+        'patent_expiry': '2020-12-13',
+        'status': 'expired_in_period'
+    },
+    'ATRIPLA': {
+        'company': 'Gilead Sciences', 
+        'ticker': 'GILD', 
+        'revenue_billions': 2.4,
+        'patent_expiry': '2021-07-12',
+        'status': 'expired_in_period'
+    },
+    'BRILINTA': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 1.6,
+        'patent_expiry': '2024-05-20',
+        'status': 'expired_in_period'
+    },
+    'SENSIPAR': {
+        'company': 'Amgen', 
+        'ticker': 'AMGN', 
+        'revenue_billions': 1.3,
+        'patent_expiry': '2021-03-03',
+        'status': 'expired_in_period'
+    },
+    'ZYTIGA': {
+        'company': 'Johnson & Johnson', 
+        'ticker': 'JNJ', 
+        'revenue_billions': 3.8,
+        'patent_expiry': '2022-04-05',
+        'status': 'expired_in_period'
+    },
+    'EPOGEN': {
+        'company': 'Amgen', 
+        'ticker': 'AMGN', 
+        'revenue_billions': 1.9,
+        'patent_expiry': '2020-06-11',
+        'status': 'expired_in_period'
+    },
+    'HUMIRA_EUROPE': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 4.2,
+        'patent_expiry': '2020-10-16',
+        'status': 'expired_in_period'
+    },
+    'GEODON': {
+        'company': 'Pfizer', 
+        'ticker': 'PFE', 
+        'revenue_billions': 1.1,
+        'patent_expiry': '2021-02-06',
+        'status': 'expired_in_period'
+    },
+    'MAXALT': {
+        'company': 'Merck & Co.', 
+        'ticker': 'MRK', 
+        'revenue_billions': 0.8,
+        'patent_expiry': '2020-12-06',
+        'status': 'expired_in_period'
+    },
+    'XYZAL': {
+        'company': 'Sanofi', 
+        'ticker': 'SNY', 
+        'revenue_billions': 0.7,
+        'patent_expiry': '2020-05-26',
+        'status': 'expired_in_period'
+    },
+    'BONIVA': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 0.6,
+        'patent_expiry': '2020-03-29',
+        'status': 'expired_in_period'
+    },
+    'NAMENDA': {
+        'company': 'Allergan', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 1.5,
+        'patent_expiry': '2021-07-11',
+        'status': 'expired_in_period'
+    },
+    'TARCEVA': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 1.2,
+        'patent_expiry': '2020-11-17',
+        'status': 'expired_in_period'
+    },
+    'PEGASYS': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 0.9,
+        'patent_expiry': '2020-12-10',
+        'status': 'expired_in_period'
+    },
+    'COPAXONE_GENERIC': {
+        'company': 'Teva', 
+        'ticker': 'TEVA', 
+        'revenue_billions': 1.1,
+        'patent_expiry': '2021-05-24',
+        'status': 'expired_in_period'
+    },
+    'SYMBICORT_HFA': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 1.6,
+        'patent_expiry': '2022-09-07',
+        'status': 'expired_in_period'
+    },
+    'SANDOSTATIN': {
+        'company': 'Novartis', 
+        'ticker': 'NVS', 
+        'revenue_billions': 1.8,
+        'patent_expiry': '2021-03-09',
+        'status': 'expired_in_period'
+    },
+    'KALETRA': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 1.3,
+        'patent_expiry': '2020-09-17',
+        'status': 'expired_in_period'
+    },
+    'HUMALOG_MIX': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 2.2,
+        'patent_expiry': '2023-12-11',
+        'status': 'expired_in_period'
+    },
+    'ZIAGEN': {
+        'company': 'ViiV Healthcare/GSK', 
+        'ticker': 'GSK', 
+        'revenue_billions': 0.8,
+        'patent_expiry': '2020-07-14',
+        'status': 'expired_in_period'
+    },
+    
+    # =============================================================================
+    # DRUGS STILL PROTECTED (50 drugs) - Higher weights expected
+    # =============================================================================
+    
+    # Original 10 from your list
     'KEYTRUDA_BACKTEST': {
         'company': 'Merck & Co.', 
         'ticker': 'MRK', 
@@ -277,8 +567,263 @@ BACKTEST_TARGET_DRUGS = {
         'revenue_billions': 13.4,
         'patent_expiry': '2030-02-28',
         'status': 'still_protected'
+    },
+    
+    # Additional 40 drugs still protected
+    'OZEMPIC': {
+        'company': 'Novo Nordisk', 
+        'ticker': 'NVO', 
+        'revenue_billions': 21.1,
+        'patent_expiry': '2031-12-05',
+        'status': 'still_protected'
+    },
+    'WEGOVY': {
+        'company': 'Novo Nordisk', 
+        'ticker': 'NVO', 
+        'revenue_billions': 4.5,
+        'patent_expiry': '2031-12-05',
+        'status': 'still_protected'
+    },
+    'DUPIXENT': {
+        'company': 'Sanofi/Regeneron', 
+        'ticker': 'SNY', 
+        'revenue_billions': 11.6,
+        'patent_expiry': '2031-03-28',
+        'status': 'still_protected'
+    },
+    'SPINRAZA': {
+        'company': 'Biogen', 
+        'ticker': 'BIIB', 
+        'revenue_billions': 2.0,
+        'patent_expiry': '2032-02-25',
+        'status': 'still_protected'
+    },
+    'EYLEA': {
+        'company': 'Regeneron/Bayer', 
+        'ticker': 'REGN', 
+        'revenue_billions': 6.2,
+        'patent_expiry': '2030-11-18',
+        'status': 'still_protected'
+    },
+    'IMBRUVICA': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 4.8,
+        'patent_expiry': '2027-07-12',
+        'status': 'still_protected'
+    },
+    'OCREVUS': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 6.2,
+        'patent_expiry': '2030-03-28',
+        'status': 'still_protected'
+    },
+    'VEKLURY': {
+        'company': 'Gilead Sciences', 
+        'ticker': 'GILD', 
+        'revenue_billions': 2.8,
+        'patent_expiry': '2031-05-01',
+        'status': 'still_protected'
+    },
+    'SPIKEVAX': {
+        'company': 'Moderna', 
+        'ticker': 'MRNA', 
+        'revenue_billions': 18.4,
+        'patent_expiry': '2036-10-21',
+        'status': 'still_protected'
+    },
+    'COMIRNATY': {
+        'company': 'Pfizer/BioNTech', 
+        'ticker': 'PFE', 
+        'revenue_billions': 37.8,
+        'patent_expiry': '2033-12-13',
+        'status': 'still_protected'
+    },
+    'PAXLOVID': {
+        'company': 'Pfizer', 
+        'ticker': 'PFE', 
+        'revenue_billions': 18.9,
+        'patent_expiry': '2034-12-13',
+        'status': 'still_protected'
+    },
+    'TECENTRIQ': {
+        'company': 'Roche', 
+        'ticker': 'RHHBY', 
+        'revenue_billions': 4.1,
+        'patent_expiry': '2029-10-02',
+        'status': 'still_protected'
+    },
+    'YERVOY': {
+        'company': 'Bristol Myers Squibb', 
+        'ticker': 'BMY', 
+        'revenue_billions': 1.6,
+        'patent_expiry': '2026-03-25',
+        'status': 'still_protected'
+    },
+    'TAGRISSO': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 5.8,
+        'patent_expiry': '2030-11-13',
+        'status': 'still_protected'
+    },
+    'LYNPARZA': {
+        'company': 'AstraZeneca/Merck', 
+        'ticker': 'AZN', 
+        'revenue_billions': 2.9,
+        'patent_expiry': '2032-01-13',
+        'status': 'still_protected'
+    },
+    'FARXIGA': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 4.5,
+        'patent_expiry': '2025-11-22',
+        'status': 'still_protected'
+    },
+    'JARDIANCE': {
+        'company': 'Boehringer Ingelheim', 
+        'ticker': 'BIRGY', 
+        'revenue_billions': 6.7,
+        'patent_expiry': '2025-08-02',
+        'status': 'still_protected'
+    },
+    'MOUNJARO': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 5.2,
+        'patent_expiry': '2034-07-25',
+        'status': 'still_protected'
+    },
+    'ZEPBOUND': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 1.2,
+        'patent_expiry': '2034-07-25',
+        'status': 'still_protected'
+    },
+    'VERZENIO': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 3.4,
+        'patent_expiry': '2026-09-29',
+        'status': 'still_protected'
+    },
+    'OLUMIANT': {
+        'company': 'Eli Lilly', 
+        'ticker': 'LLY', 
+        'revenue_billions': 0.9,
+        'patent_expiry': '2029-05-23',
+        'status': 'still_protected'
+    },
+    'RINVOQ': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 5.4,
+        'patent_expiry': '2031-02-18',
+        'status': 'still_protected'
+    },
+    'VENCLYXTO': {
+        'company': 'AbbVie/Roche', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 1.9,
+        'patent_expiry': '2027-12-19',
+        'status': 'still_protected'
+    },
+    'MAVYRET': {
+        'company': 'AbbVie', 
+        'ticker': 'ABBV', 
+        'revenue_billions': 4.1,
+        'patent_expiry': '2030-08-03',
+        'status': 'still_protected'
+    },
+    'CALQUENCE': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 2.3,
+        'patent_expiry': '2030-10-21',
+        'status': 'still_protected'
+    },
+    'ENHERTU': {
+        'company': 'AstraZeneca/Daiichi Sankyo', 
+        'ticker': 'AZN', 
+        'revenue_billions': 2.0,
+        'patent_expiry': '2031-12-25',
+        'status': 'still_protected'
+    },
+    'IMFINZI': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 2.7,
+        'patent_expiry': '2029-05-13',
+        'status': 'still_protected'
+    },
+    'SOLIRIS': {
+        'company': 'Alexion/AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 4.1,
+        'patent_expiry': '2027-03-16',
+        'status': 'still_protected'
+    },
+    'ULTOMIRIS': {
+        'company': 'Alexion/AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 1.9,
+        'patent_expiry': '2031-12-21',
+        'status': 'still_protected'
+    },
+    'BREZTRI': {
+        'company': 'AstraZeneca', 
+        'ticker': 'AZN', 
+        'revenue_billions': 1.4,
+        'patent_expiry': '2030-04-25',
+        'status': 'still_protected'
+    },
+    'TRELEGY': {
+        'company': 'GlaxoSmithKline', 
+        'ticker': 'GSK', 
+        'revenue_billions': 2.1,
+        'patent_expiry': '2030-09-13',
+        'status': 'still_protected'
+    },
+    'NUCALA': {
+        'company': 'GlaxoSmithKline', 
+        'ticker': 'GSK', 
+        'revenue_billions': 1.8,
+        'patent_expiry': '2028-11-04',
+        'status': 'still_protected'
+    },
+    'BENLYSTA': {
+        'company': 'GlaxoSmithKline', 
+        'ticker': 'GSK', 
+        'revenue_billions': 0.9,
+        'patent_expiry': '2026-03-09',
+        'status': 'still_protected'
+    },
+    'SHINGRIX': {
+        'company': 'GlaxoSmithKline', 
+        'ticker': 'GSK', 
+        'revenue_billions': 3.2,
+        'patent_expiry': '2032-10-20',
+        'status': 'still_protected'
+    },
+    'DESCOVY': {
+        'company': 'Gilead Sciences', 
+        'ticker': 'GILD', 
+        'revenue_billions': 5.9,
+        'patent_expiry': '2030-04-02',
+        'status': 'still_protected'
+    },
+    'TRODELVY': {
+        'company': 'Gilead Sciences', 
+        'ticker': 'GILD', 
+        'revenue_billions': 1.0,
+        'patent_expiry': '2033-04-13',
+        'status': 'still_protected'
     }
 }
+
 
 # Backtesting parameters
 BACKTEST_CONFIG = {

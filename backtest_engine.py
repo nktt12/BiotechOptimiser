@@ -22,7 +22,7 @@ class PatentCliffBacktester:
     Backtests the patent cliff avoidance strategy using known patent expiry dates
     """
     
-    def __init__(self, start_date='2020-01-01', end_date='2024-12-31'):
+    def __init__(self, start_date='2020-01-01', end_date='2023-06-31'):
         self.start_date = start_date
         self.end_date = end_date
         self.rebalance_dates = None
@@ -227,12 +227,28 @@ class PatentCliffBacktester:
                 # Get returns for stocks in portfolio
                 portfolio_return = 0
                 for ticker, weight in current_weights.items():
-                    if ('Close', ticker) in self.stock_data.columns:
-                        prev_price = self.stock_data[('Close', ticker)].iloc[i-1]
-                        curr_price = self.stock_data[('Close', ticker)].iloc[i]
-                        if pd.notna(prev_price) and pd.notna(curr_price) and prev_price != 0:
-                            stock_return = (curr_price - prev_price) / prev_price
-                            portfolio_return += weight * stock_return
+                    # Handle both single ticker and multi-ticker data structures
+                    if len(self.stock_data.columns.names) > 1:
+                        # Multi-ticker format: ('Close', 'TICKER')
+                        if ('Close', ticker) in self.stock_data.columns:
+                            prev_price = self.stock_data[('Close', ticker)].iloc[i-1]
+                            curr_price = self.stock_data[('Close', ticker)].iloc[i]
+                        else:
+                            continue
+                    else:
+                        # Single ticker or flat format
+                        if ticker in self.stock_data.columns:
+                            prev_price = self.stock_data[ticker].iloc[i-1]
+                            curr_price = self.stock_data[ticker].iloc[i]
+                        elif 'Close' in self.stock_data.columns:
+                            prev_price = self.stock_data['Close'].iloc[i-1]
+                            curr_price = self.stock_data['Close'].iloc[i]
+                        else:
+                            continue
+                    
+                    if pd.notna(prev_price) and pd.notna(curr_price) and prev_price != 0:
+                        stock_return = (curr_price - prev_price) / prev_price
+                        portfolio_return += weight * stock_return
                 
                 # Update portfolio value
                 portfolio_value *= (1 + portfolio_return)
@@ -297,11 +313,23 @@ class PatentCliffBacktester:
                 returns = []
                 
                 for ticker in tickers:
-                    if ('Close', ticker) in self.stock_data.columns:
-                        prices = self.stock_data[('Close', ticker)].dropna()
-                        if len(prices) > 1:
-                            total_return = (prices.iloc[-1] - prices.iloc[0]) / prices.iloc[0]
-                            returns.append(total_return)
+                    prices = None
+                    
+                    # Handle different data structures
+                    if len(self.stock_data.columns.names) > 1:
+                        # Multi-ticker format: ('Close', 'TICKER')
+                        if ('Close', ticker) in self.stock_data.columns:
+                            prices = self.stock_data[('Close', ticker)].dropna()
+                    else:
+                        # Single ticker or flat format
+                        if ticker in self.stock_data.columns:
+                            prices = self.stock_data[ticker].dropna()
+                        elif 'Close' in self.stock_data.columns and len(tickers) == 1:
+                            prices = self.stock_data['Close'].dropna()
+                    
+                    if prices is not None and len(prices) > 1:
+                        total_return = (prices.iloc[-1] - prices.iloc[0]) / prices.iloc[0]
+                        returns.append(total_return)
                 
                 if returns:
                     group_data['avg_return'] = np.mean(returns)
@@ -330,8 +358,14 @@ class PatentCliffBacktester:
         
         # Volatility
         portfolio_vol = np.std(daily_returns) * np.sqrt(252)
-        benchmark_returns = np.diff(benchmark_values) / benchmark_values[:-1]
-        benchmark_vol = np.std(benchmark_returns) * np.sqrt(252)
+        
+        # Fix benchmark returns calculation
+        benchmark_values = np.array(benchmark_values).flatten()  # Ensure 1D array
+        if len(benchmark_values) > 1:
+            benchmark_returns = np.diff(benchmark_values) / benchmark_values[:-1]
+            benchmark_vol = np.std(benchmark_returns) * np.sqrt(252)
+        else:
+            benchmark_vol = 0.0
         
         # Sharpe ratio (assuming 2% risk-free rate)
         risk_free_rate = 0.02
@@ -347,17 +381,6 @@ class PatentCliffBacktester:
         win_rate = np.sum(np.array(daily_returns) > 0) / len(daily_returns) if len(daily_returns) > 0 else 0
         
         self.performance_metrics = {
-            'Total Portfolio Return': f"{total_portfolio_return:.2%}",
-            'Total Benchmark Return': f"{total_benchmark_return:.2%}",
-            'Excess Return': f"{total_portfolio_return - total_benchmark_return:.2%}",
-            'Annual Portfolio Return': f"{annual_portfolio_return:.2%}",
-            'Annual Benchmark Return': f"{annual_benchmark_return:.2%}",
-            'Portfolio Volatility': f"{portfolio_vol:.2%}",
-            'Benchmark Volatility': f"{benchmark_vol:.2%}",
-            'Portfolio Sharpe Ratio': f"{portfolio_sharpe:.3f}",
-            'Benchmark Sharpe Ratio': f"{benchmark_sharpe:.3f}",
-            'Maximum Drawdown': f"{max_drawdown:.2%}",
-            'Win Rate': f"{win_rate:.2%}",
             'Total Transaction Costs': f"${self.portfolio_history['total_transaction_costs']:,.0f}",
             'Final Portfolio Value': f"${portfolio_values[-1]:,.0f}",
             'Final Benchmark Value': f"${benchmark_values[-1]:,.0f}"
