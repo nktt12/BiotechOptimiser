@@ -40,7 +40,7 @@ def sentiment_analysis(name:str, ticker: str) -> Tuple[float, int]:
     feed = feedparser.parse(rss_url)
 
     total_score = 0
-    article_count = 0
+    number_of_articles = 0
     for i,entry in enumerate(feed.entries):
         if name.lower() not in entry.summary.lower():
             continue
@@ -51,7 +51,7 @@ def sentiment_analysis(name:str, ticker: str) -> Tuple[float, int]:
         elif sentiment['label'] == 'negative':
             total_score -= sentiment['score']
             number_of_articles += 1
-    return total_score/number_of_articles if article_count > 0 else 0
+    return total_score/number_of_articles if number_of_articles > 0 else 0
 
 
 

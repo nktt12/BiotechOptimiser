@@ -23,7 +23,7 @@ class EnhancedPatentCliffBacktester:
     Enhanced backtester that includes new drug launches during the backtest period
     """
     
-    def __init__(self, start_date='2020-01-01', end_date='2023-06-31'):
+    def __init__(self, start_date='2020-01-01', end_date='2024-12-31'):
         self.start_date = start_date
         self.end_date = end_date
         self.rebalance_dates = None
