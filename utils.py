@@ -6,6 +6,8 @@ import yfinance as yf
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
+import feedparser
+from transformers import pipeline
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -32,6 +34,26 @@ def get_unique_tickers(target_drugs: Dict, new_launches: Dict = None) -> List[st
         tickers = list(set(tickers + launch_tickers))
     
     return tickers
+def sentiment_analysis(name:str, ticker: str) -> Tuple[float, int]:
+    pipe = pipeline("text-classification", model="ProsusAI/finbert")
+    rss_url = f"https://finance.yahoo.com/rss/headline?s={ticker}"
+    feed = feedparser.parse(rss_url)
+
+    total_score = 0
+    article_count = 0
+    for i,entry in enumerate(feed.entries):
+        if name.lower() not in entry.summary.lower():
+            continue
+        sentiment = pipe(entry.summary)[0]
+        if sentiment['label'] == 'positive':
+            total_score += sentiment['score']
+            number_of_articles += 1
+        elif sentiment['label'] == 'negative':
+            total_score -= sentiment['score']
+            number_of_articles += 1
+    return total_score/number_of_articles if article_count > 0 else 0
+
+
 
 def download_stock_data(tickers: List[str], start_date: str, end_date: str) -> pd.DataFrame:
     """Download stock data for multiple tickers"""

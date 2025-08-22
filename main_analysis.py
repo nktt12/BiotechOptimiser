@@ -7,11 +7,16 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from typing import Dict, Tuple
 import warnings
+
+# Use a pipeline as a high-level helper
+
+
+
 warnings.filterwarnings('ignore')
 
 from config import TARGET_DRUGS, DATA_PATHS, ANALYSIS_CONFIG, RISK_PARAMETERS
 from utils import (load_orange_book_data, get_unique_tickers, download_stock_data, 
-                   get_latest_revenues, apply_position_limits)
+                   get_latest_revenues, apply_position_limits, sentiment_analysis)
 
 class PatentCliffAnalyzer:
     """Main class for patent cliff analysis"""
@@ -147,6 +152,7 @@ class PatentCliffAnalyzer:
         for _, row in company_risk.iterrows():
             ticker = row['ticker']
             total_revenue = self.company_revenues.get(ticker, 50.0)
+            sentiment_risk = sentiment_analysis(row['company'], ticker)
             
             # Calculate what % of company revenue is at patent cliff risk
             revenue_risk_percent = (row['total_drug_revenue_at_risk'] / total_revenue) * 100
@@ -161,7 +167,7 @@ class PatentCliffAnalyzer:
             diversification_factor = max(0.5, 1 - (row['number_of_drugs_at_risk'] - 1) * RISK_PARAMETERS['diversification_penalty'])
             
             # Combined adjustment
-            risk_adjusted_weight = time_factor * risk_factor * diversification_factor
+            risk_adjusted_weight = time_factor * risk_factor * diversification_factor * ((1+ sentiment_risk)/2)
             
             weights.append({
                 'ticker': ticker,
